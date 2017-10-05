@@ -1,14 +1,15 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+﻿using System;
+using System.ComponentModel;
+using Newtonsoft.Json;
 
 namespace Svenkle.TeamCityBuildLight.Infrastructure.TeamCity
 {
     public class Build
     {
-        [JsonConverter(typeof(StringEnumConverter))]
-        public Status Status { get; set; }
+        [JsonConverter(typeof(DateTimeConverter))]
+        public DateTime? StartDate { get; set; }
 
-        [JsonConverter(typeof(StringEnumConverter))]
-        public State State { get; set; }
+        [JsonConverter(typeof(DateTimeConverter))]
+        public DateTime? FinishDate { get; set; }
     }
 }

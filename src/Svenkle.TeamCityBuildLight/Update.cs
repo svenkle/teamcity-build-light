@@ -8,7 +8,6 @@ using Svenkle.TeamCityBuildLight.Infrastructure.Configuration;
 using Svenkle.TeamCityBuildLight.Infrastructure.Light;
 using Svenkle.TeamCityBuildLight.Infrastructure.Logger;
 using Svenkle.TeamCityBuildLight.Infrastructure.TeamCity;
-using State = Svenkle.TeamCityBuildLight.Infrastructure.TeamCity.State;
 
 namespace Svenkle.TeamCityBuildLight
 {
@@ -27,39 +26,42 @@ namespace Svenkle.TeamCityBuildLight
         {
             try
             {
-                _logger.Info($"Getting build status for project/s matching {Configuration.ProjectFilter} with build/s matching {Configuration.BuildFilter}");
+                _logger.Info($"Checking build statuses for builds matching {Configuration.BuildFilter}");
 
                 using (var httpClient = new HttpClient { BaseAddress = Configuration.Url })
                 {
                     var teamCityClient = RestClient.For<ITeamCityClient>(httpClient);
                     teamCityClient.Authorization = new AuthenticationHeaderValue("Basic", Configuration.Credential);
 
-                    var projectCollection = teamCityClient.GetProjects().Result;
+                    var projects = teamCityClient.GetProjectsAsync().Result.Projects
+                        .Where(x => Configuration.BuildFilter.IsMatch(x.Id)).Select(x => x.Id).ToList();
 
-                    _logger.Debug($"{projectCollection.Projects.Length} project/s found matching {Configuration.ProjectFilter}");
+                    _logger.Debug($"{projects.Count} build/s found");
 
-                    var results = projectCollection.Projects
-                        .Where(x => Configuration.ProjectFilter.IsMatch(x.ProjectId) && Configuration.BuildFilter.IsMatch(x.Id))
-                        .SelectMany(x => teamCityClient.GetBuildResults(x.Id).Result.BuildResults.SelectMany(y => y.Builds.Builds))
-                        .ToList();
+                    var error = false;
+                    var inprogress = false;
 
-                    _logger.Debug($"{results.Count} build/s found matching {Configuration.ProjectFilter} and {Configuration.BuildFilter}");
+                    foreach (var project in projects)
+                    {
+                        _logger.Debug($"Getting latest failure for {project}");
+                        var failure = teamCityClient.GetMostRecentFailureAsync(project).Result.Flatten();
+                        _logger.Debug($"Latest failure start:{failure.StartDate} end:{failure.FinishDate}");
 
-                    var running = results.Count(x => x.State == State.Running);
+                        _logger.Debug($"Getting latest success for {project}");
+                        var success = teamCityClient.GetMostRecentSuccessAsync(project).Result.Flatten();
+                        _logger.Debug($"Latest success start:{success.StartDate} end:{success.FinishDate}");
 
-                    _logger.Info($"{running} build/s are currently running");
+                        _logger.Debug($"Getting latest running build for {project}");
+                        var running = teamCityClient.GetMostRecentRunningAsync(project).Result.Flatten();
 
-                    var error = results.Count(x => x.Status != Status.Success);
+                        if (!inprogress)
+                            inprogress = running?.StartDate != null;
 
-                    _logger.Info($"{error} build/s are currently failing");
+                        if (!error)
+                            error = failure.FinishDate > success.StartDate;
+                    }
 
-                    if (running > 0)
-                        _light.Pulse(Color.Yellow);
-                    else
-                        _light.Off(Color.Yellow);
-
-                    _light.On(error == 0 ? Color.Green : Color.Red);
-                    _light.Off(error == 0 ? Color.Red : Color.Green);
+                    SetLightState(error, inprogress);
                 }
             }
             catch (Exception exception)
@@ -67,6 +69,17 @@ namespace Svenkle.TeamCityBuildLight
                 _logger.Error("Unable to refresh build status", exception);
                 _light.Off();
             }
+        }
+
+        private void SetLightState(bool error, bool running)
+        {
+            _light.On(error ? Color.Red : Color.Green);
+            _light.Off(error ? Color.Green : Color.Red);
+
+            if (running)
+                _light.Pulse(Color.Yellow);
+            else
+                _light.Off(Color.Yellow);
         }
     }
 }

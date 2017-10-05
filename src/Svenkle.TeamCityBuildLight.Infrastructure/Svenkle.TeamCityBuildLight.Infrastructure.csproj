@@ -73,6 +73,8 @@
     <Compile Include="TeamCity\ProjectCollection.cs" />
     <Compile Include="TeamCity\State.cs" />
     <Compile Include="TeamCity\Status.cs" />
+    <Compile Include="TeamCity\DateTimeConverter.cs" />
+    <Compile Include="TeamCity\TeamCityExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
