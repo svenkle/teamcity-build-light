@@ -53,6 +53,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Configuration\Configuration.cs" />
+    <Compile Include="TeamCity\TeamCityRegistry.cs" />
     <Compile Include="Configuration\ConfigurationRegistry.cs" />
     <Compile Include="Light\Color.cs" />
     <Compile Include="Light\Globe.cs" />
