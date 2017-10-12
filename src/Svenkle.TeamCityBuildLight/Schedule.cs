@@ -1,5 +1,4 @@
 ﻿using FluentScheduler;
-using Svenkle.TeamCityBuildLight.Infrastructure.Configuration;
 
 namespace Svenkle.TeamCityBuildLight
 {
@@ -8,7 +7,7 @@ namespace Svenkle.TeamCityBuildLight
         public Schedule()
         {
             NonReentrantAsDefault();
-            Schedule<Update>().ToRunNow().AndEvery(Configuration.Frequency).Seconds();
+            Schedule<Update>().ToRunNow().AndEvery(30).Seconds();
         }
     }
 }

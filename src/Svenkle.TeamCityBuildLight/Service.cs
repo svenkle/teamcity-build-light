@@ -2,10 +2,10 @@
 using System.ServiceProcess;
 using FluentScheduler;
 using StructureMap;
-using StructureMap.Building.Interception;
 using Svenkle.TeamCityBuildLight.Infrastructure.Configuration;
 using Svenkle.TeamCityBuildLight.Infrastructure.Light;
 using Svenkle.TeamCityBuildLight.Infrastructure.Logger;
+using Svenkle.TeamCityBuildLight.Infrastructure.TeamCity;
 
 namespace Svenkle.TeamCityBuildLight
 {
@@ -32,18 +32,18 @@ namespace Svenkle.TeamCityBuildLight
         protected override void OnStart(string[] args)
         {
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
-
-            var activatorInterceptor = new ActivatorInterceptor<object>((context, o) => OnActivation(context, o));
-            var policy = new InterceptorPolicy<object>(activatorInterceptor);
-
-            _container = new Container(x =>
+            
+            var container = new Container(x =>
             {
                 x.AddRegistry<LoggerRegistry>();
                 x.AddRegistry<LightRegistry>();
                 x.AddRegistry<ConfigurationRegistry>();
-                x.Policies.Interceptors(policy);
+                x.AddRegistry<TeamCityRegistry>();
             });
-            
+
+            container.AssertConfigurationIsValid();
+            _container = container;
+
             JobManager.JobException += ScheduleDomain_UnhandledException;
             JobManager.JobFactory = new JobFactory(_container);
             JobManager.Initialize(new Schedule());
@@ -55,26 +55,16 @@ namespace Svenkle.TeamCityBuildLight
             _container.GetInstance<Light>()?.Off();
         }
 
-        private static void OnActivation(IContext context, object o)
-        {
-            // Do not intercept logger as this will create a circular reference
-            if (o is ILogger)
-                return;
-
-            context.GetInstance<ILogger>()?.Debug("Retrieving {0} from container", o.GetType().Name);
-        }
-
         private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
-            var logger = _container.GetInstance<ILogger>();
-            if (e.ExceptionObject is Exception exception)
-                logger?.Fatal(exception);
+            _container.GetInstance<ILogger>()?.Fatal(e.ExceptionObject as Exception);
+            _container.GetInstance<Light>()?.Off();
         }
 
         private static void ScheduleDomain_UnhandledException(JobExceptionInfo obj)
         {
-            var logger = _container.GetInstance<ILogger>();
-            logger?.Fatal(obj.Exception);
+            _container.GetInstance<ILogger>().Fatal(obj.Exception);
+            _container.GetInstance<Light>()?.Off();
         }
     }
 }

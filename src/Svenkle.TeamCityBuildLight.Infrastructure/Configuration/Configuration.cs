@@ -7,12 +7,10 @@ namespace Svenkle.TeamCityBuildLight.Infrastructure.Configuration
 {
     public class Configuration
     {
-        public static Uri Url => new Uri(ConfigurationManager.AppSettings["Url"]);
-        public static Regex ProjectFilter => new Regex(ConfigurationManager.AppSettings["ProjectFilter"], RegexOptions.IgnoreCase);
-        public static Regex BuildFilter => new Regex(ConfigurationManager.AppSettings["BuildFilter"], RegexOptions.IgnoreCase);
-        public static string Username => ConfigurationManager.AppSettings["Username"];
-        public static string Password => ConfigurationManager.AppSettings["Password"];
-        public static string Credential => Convert.ToBase64String(Encoding.ASCII.GetBytes($"{Username}:{Password}"));
-        public static int Frequency => int.Parse(ConfigurationManager.AppSettings["Frequency"]);
+        public Uri Url => new Uri(ConfigurationManager.AppSettings["Url"]);
+        public Regex BuildFilter => new Regex(ConfigurationManager.AppSettings["BuildFilter"], RegexOptions.IgnoreCase);
+        public string Username => ConfigurationManager.AppSettings["Username"];
+        public string Password => ConfigurationManager.AppSettings["Password"];
+        public string Credential => Convert.ToBase64String(Encoding.ASCII.GetBytes($"{Username}:{Password}"));
     }
 }

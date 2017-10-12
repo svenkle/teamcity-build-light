@@ -53,6 +53,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Configuration\Configuration.cs" />
+    <Compile Include="TeamCity\TeamCityRegistry.cs" />
     <Compile Include="Configuration\ConfigurationRegistry.cs" />
     <Compile Include="Light\Color.cs" />
     <Compile Include="Light\Globe.cs" />
@@ -73,6 +74,8 @@
     <Compile Include="TeamCity\ProjectCollection.cs" />
     <Compile Include="TeamCity\State.cs" />
     <Compile Include="TeamCity\Status.cs" />
+    <Compile Include="TeamCity\DateTimeConverter.cs" />
+    <Compile Include="TeamCity\TeamCityExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
