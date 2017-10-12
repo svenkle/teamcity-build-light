@@ -85,7 +85,7 @@ namespace Svenkle.TeamCityBuildLight
                 _logger.Debug($"Getting success state for {project}");
                 var success = _teamCityClient.GetMostRecentSuccessAsync(project).Result.Flatten();
                 _logger.Debug($"Latest success start:{success?.StartDate} end:{success?.FinishDate}");
-                error = failure?.FinishDate > success?.StartDate;
+                error = failure?.FinishDate > success?.StartDate || success?.StartDate == null && failure?.FinishDate != null;
             }
             else
             {
